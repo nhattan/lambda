@@ -24,4 +24,35 @@ class Checkout
   def find_by_code(code)
     @items.find { |item| item[:data].code == code }
   end
+
+  def total
+    @promotion = Promotion.new(@promotion_rules) unless @promotion_rules.empty?
+
+    total = @items.inject(0) { |sum, item| sum + total_item_price(item) }
+    discounted_total(total)
+  end
+
+  private
+
+  def total_item_price(item)
+    item_price = item[:data].price
+
+    if @promotion
+      item_price = @promotion.discounted_price(
+        item[:data].code,
+        item_price,
+        item[:quantity]
+      )
+    end
+
+    item_price * item[:quantity]
+  end
+
+  def discounted_total(total)
+    if @promotion
+      @promotion.discounted_total(total)
+    else
+      total
+    end
+  end
 end
